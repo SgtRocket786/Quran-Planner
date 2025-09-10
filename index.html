@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quran Memorization Planner</title>
+    <style>
+      :root {
+        --brand: #2c3e50;
+        --bg: #f5f5f5;
+        --ok: #d4edda;
+        --ok-text: #155724;
+        --border: #ccc;
+        --white: #fff;
+      }
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          sans-serif;
+        background: var(--bg);
+        padding: 20px;
+      }
+      h1 {
+        color: var(--brand);
+        text-align: center;
+        margin: 0 0 14px;
+      }
+      .controls {
+        max-width: 960px;
+        margin: 0 auto 12px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .controls label {
+        font-size: 14px;
+      }
+      .controls input[type="number"] {
+        width: 90px;
+        padding: 6px 8px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--white);
+      }
+      .note {
+        font-size: 12px;
+        color: #555;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--white);
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+      }
+      th,
+      td {
+        border: 1px solid var(--border);
+        padding: 10px;
+        text-align: center;
+        vertical-align: middle;
+      }
+      th {
+        background: var(--brand);
+        color: var(--white);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      tbody tr.completed {
+        background: var(--ok);
+        color: var(--ok-text);
+      }
+      input[type="checkbox"] {
+        transform: scale(1.2);
+      }
+      @media (max-width: 768px) {
+        table,
+        thead,
+        tbody,
+        th,
+        td,
+        tr {
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Quran Memorization Planner</h1>
+
+    <div class="controls">
+      <label
+        >Start Page:
+        <input id="startPageInput" type="number" min="1" max="604" value="103"
+      /></label>
+      <label
+        >End Page:
+        <input id="endPageInput" type="number" min="1" max="604" value="604"
+      /></label>
+      <label
+        >Pages / Day:
+        <input id="ppdInput" type="number" min="1" max="10" value="2"
+      /></label>
+      <label
+        >Connect (prev pages):
+        <input id="connectInput" type="number" min="0" max="20" value="4"
+      /></label>
+      <button id="regenerateBtn">Regenerate</button>
+      <span class="note"
+        >Revise = 1 Juz/day, continues and wraps at the current Juz.</span
+      >
+    </div>
+
+    <table id="planner-table">
+      <thead>
+        <tr>
+          <th>✅</th>
+          <th>Day #</th>
+          <th>Connect<br />(Last 4 Pages)</th>
+          <th>Memorize<br />(2 Pages)</th>
+          <th>Revise<br />(1 Juz / day)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <script>
+      // Juz start pages for the common Madani Mushaf
+      const juzStartPages = [
+        1, 22, 42, 62, 82, 102, 121, 141, 162, 182, 202, 222, 242, 262, 282,
+        302, 322, 342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562,
+        582,
+      ];
+
+      function getJuzForPage(page) {
+        for (let i = juzStartPages.length - 1; i >= 0; i--) {
+          if (page >= juzStartPages[i]) return i + 1;
+        }
+        return 1;
+      }
+
+      const tbody = document.querySelector("#planner-table tbody");
+      const startPageInput = document.getElementById("startPageInput");
+      const endPageInput = document.getElementById("endPageInput");
+      const ppdInput = document.getElementById("ppdInput");
+      const connectInput = document.getElementById("connectInput");
+      const regenerateBtn = document.getElementById("regenerateBtn");
+
+      function buildTable({
+        startPage = 103,
+        endPage = 604,
+        pagesPerDay = 2,
+        connectPages = 4,
+      } = {}) {
+        tbody.innerHTML = "";
+
+        let currentPage = startPage;
+        let day = 1;
+
+        // Stateful, keeps increasing day-to-day; wraps by the day's current Juz
+        let reviseCounter = 1;
+
+        while (currentPage <= endPage) {
+          const memorizeStart = currentPage;
+          const memorizeEnd = Math.min(endPage, currentPage + pagesPerDay - 1);
+
+          const connectStart = memorizeStart - connectPages;
+          const connectEnd = memorizeStart - 1;
+
+          // Current Juz based on what you're memorizing *today*
+          const currentJuz = getJuzForPage(memorizeEnd);
+
+          // Use the counter, then advance; wrap at currentJuz
+          const reviseJuz = reviseCounter;
+          reviseCounter = (reviseCounter % currentJuz) + 1;
+
+          const tr = document.createElement("tr");
+
+          // Checkbox
+          const tdCheck = document.createElement("td");
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.addEventListener("change", () =>
+            tr.classList.toggle("completed", checkbox.checked)
+          );
+          tdCheck.appendChild(checkbox);
+          tr.appendChild(tdCheck);
+
+          // Day #
+          let td = document.createElement("td");
+          td.textContent = `Day ${day}`;
+          tr.appendChild(td);
+
+          // Connect first
+          td = document.createElement("td");
+          td.textContent =
+            connectStart > 0 ? `Pg ${connectStart}-${connectEnd}` : "—";
+          tr.appendChild(td);
+
+          // Memorize
+          td = document.createElement("td");
+          td.textContent = `Pg ${memorizeStart}-${memorizeEnd}`;
+          tr.appendChild(td);
+
+          // Revise (1 juz)
+          td = document.createElement("td");
+          td.textContent = `Juz ${reviseJuz}`;
+          tr.appendChild(td);
+
+          tbody.appendChild(tr);
+
+          currentPage += pagesPerDay;
+          day++;
+        }
+      }
+
+      // Initial build
+      buildTable();
+
+      // Regenerate (if you tweak settings)
+      regenerateBtn.addEventListener("click", () => {
+        const s = Math.max(
+          1,
+          Math.min(604, Number(startPageInput.value) || 103)
+        );
+        const e = Math.max(1, Math.min(604, Number(endPageInput.value) || 604));
+        const p = Math.max(1, Number(ppdInput.value) || 2);
+        const c = Math.max(0, Number(connectInput.value) || 4);
+        buildTable({
+          startPage: s,
+          endPage: e,
+          pagesPerDay: p,
+          connectPages: c,
+        });
+      });
+    </script>
+  </body>
+</html>
