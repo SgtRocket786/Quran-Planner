@@ -50,9 +50,7 @@
       padding: 7px 14px;
       cursor: pointer;
     }
-    button:hover {
-      opacity: 0.85;
-    }
+    button:hover { opacity: 0.85; }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -82,9 +80,7 @@
       text-align: center;
     }
     @media (max-width: 768px) {
-      table, th, td {
-        font-size: 12px;
-      }
+      table, th, td { font-size: 12px; }
     }
   </style>
 </head>
@@ -92,10 +88,9 @@
   <h1>Quran Memorization Planner</h1>
 
   <div class="controls">
-    <label>Start Page: <input id="startPageInput" type="number" min="1" max="604" value="131"></label>
+    <label>Start Page: <input id="startPageInput" type="number" min="1" max="604" value="103"></label>
     <label>End Page: <input id="endPageInput" type="number" min="1" max="604" value="604"></label>
     <label>Pages/Day: <input id="ppdInput" type="number" min="1" max="10" value="2"></label>
-    <label>Connect Pages: <input id="connectInput" type="number" min="0" max="20" value="6"></label>
     <label>Start Date: <input id="startDateInput" type="date"></label>
     <button id="generateBtn">Generate</button>
   </div>
@@ -106,20 +101,18 @@
         <th>✅</th>
         <th>Day #</th>
         <th>Revise<br>(1 Juz/day)</th>
-        <th>Connect</th>
-        <th>Memorize</th>
+        <th>Connect<br>(Start of current Juz → Last memorized)</th>
+        <th>Memorize<br>(2 Pages)</th>
       </tr>
     </thead>
     <tbody></tbody>
     <tfoot>
-      <tr>
-        <td colspan="5" id="summary">📅 Select a Start Date to see expected Khatm date below.</td>
-      </tr>
+      <tr><td colspan="5" id="summary">📅 Select a Start Date to see expected Khatm date below.</td></tr>
     </tfoot>
   </table>
 
   <script>
-    // Juz start pages for Madani Mushaf
+    // === Juz start pages ===
     const juzStartPages = [
       1,22,42,62,82,102,121,141,162,182,
       202,222,242,262,282,302,322,342,362,382,
@@ -133,13 +126,12 @@
       return 1;
     }
 
-    // === Hijri Conversion Helpers ===
+    // === Hijri conversion ===
     const hijriMonths = [
       "محرم", "صفر", "ربيع الأول", "ربيع الآخر",
       "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان",
       "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
     ];
-
     function gregorianToHijri(dateObj) {
       const gTime = dateObj.getTime();
       const jd = Math.floor((gTime / 86400000) + 2440587.5);
@@ -155,20 +147,14 @@
       const year = 30 * n + j - 30;
       return { day, month, year };
     }
-
-    function toArabicNumber(num) {
-      return num.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
-    }
-
+    function toArabicNumber(num) { return num.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]); }
     function formatHijriReadable(h) {
       const monthName = hijriMonths[h.month - 1] || "";
       return `${toArabicNumber(h.day)} ${monthName} ${toArabicNumber(h.year)}`;
     }
-
     function weekdayEnglish(dateObj) {
       return dateObj.toLocaleDateString('en-US', { weekday: 'long' });
     }
-
     function formatEnglishDate(dateObj) {
       const day = dateObj.getDate();
       const suffix = (day % 10 === 1 && day !== 11) ? "st"
@@ -180,12 +166,11 @@
       return `${dayWithSuffix} ${month} ${year}`;
     }
 
-    // === Table Generation ===
+    // === Table builder ===
     function buildTable() {
       const startPage = Number(document.getElementById('startPageInput').value) || 103;
       const endPage = Number(document.getElementById('endPageInput').value) || 604;
       const pagesPerDay = Number(document.getElementById('ppdInput').value) || 2;
-      const connectPages = Number(document.getElementById('connectInput').value) || 4;
       const startDateValue = document.getElementById('startDateInput').value;
 
       const tbody = document.querySelector('#planner-table tbody');
@@ -196,42 +181,47 @@
       let currentPage = startPage;
       let day = 1;
       let reviseCounter = 1;
+      let currentJuz = getJuzForPage(startPage);
+      let currentJuzStart = juzStartPages[currentJuz - 1];
 
       while (currentPage <= endPage) {
         const memorizeStart = currentPage;
         const memorizeEnd = Math.min(endPage, memorizeStart + pagesPerDay - 1);
-        const connectStart = memorizeStart - connectPages;
-        const connectEnd = memorizeStart - 1;
-        const currentJuz = getJuzForPage(memorizeEnd);
+        const memorizeJuz = getJuzForPage(memorizeEnd);
+
+        // If we enter a new Juz, reset connect start
+        if (memorizeJuz !== currentJuz) {
+          currentJuz = memorizeJuz;
+          currentJuzStart = juzStartPages[currentJuz - 1];
+        }
+
+        const connectStart = currentJuzStart;
+        const connectEnd = memorizeStart - 1; // last page already memorized
+
         const reviseJuz = reviseCounter;
-        reviseCounter = (reviseCounter % currentJuz) + 1;
+        reviseCounter = (reviseCounter % 30) + 1;
 
         const tr = document.createElement('tr');
 
-        // Checkbox
         const tdCheck = document.createElement('td');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.addEventListener('change', ()=> tr.classList.toggle('completed', checkbox.checked));
+        checkbox.addEventListener('change',()=> tr.classList.toggle('completed',checkbox.checked));
         tdCheck.appendChild(checkbox);
         tr.appendChild(tdCheck);
 
-        // Day #
         const tdDay = document.createElement('td');
         tdDay.textContent = `Day ${day}`;
         tr.appendChild(tdDay);
 
-        // Revise
         const tdRevise = document.createElement('td');
         tdRevise.textContent = `Juz ${reviseJuz}`;
         tr.appendChild(tdRevise);
 
-        // Connect
         const tdConnect = document.createElement('td');
-        tdConnect.textContent = connectStart > 0 ? `Pg ${connectStart}-${connectEnd}` : '—';
+        tdConnect.textContent = connectEnd >= connectStart ? `Pg ${connectStart}-${connectEnd}` : `Pg ${connectStart}`;
         tr.appendChild(tdConnect);
 
-        // Memorize
         const tdMem = document.createElement('td');
         tdMem.textContent = `Pg ${memorizeStart}-${memorizeEnd}`;
         tr.appendChild(tdMem);
@@ -242,7 +232,7 @@
         day++;
       }
 
-      // === Khatm Date Calculation ===
+      // === Khatm date ===
       if (startDateValue) {
         const totalDays = day - 1;
         const startDate = new Date(startDateValue);
@@ -257,8 +247,7 @@
         summary.innerHTML = `
           📖 <strong>Expected Khatm Date:</strong><br>
           ${englishDay}, ${englishDate}<br>
-          ${hijriStr}<br>
-          إن شاء الله
+          ${hijriStr}
         `;
       }
     }
