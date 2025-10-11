@@ -1,259 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Quran Memorization Planner</title>
-  <style>
-    :root {
-      --brand: #2c3e50;
-      --bg: #f5f5f5;
-      --ok: #d4edda;
-      --ok-text: #155724;
-      --border: #ccc;
-      --white: #fff;
-    }
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: var(--bg);
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      color: var(--brand);
-      margin-bottom: 16px;
-    }
-    .controls {
-      max-width: 960px;
-      margin: 0 auto 14px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      color: #333;
-    }
-    .controls label {
-      font-size: 14px;
-    }
-    .controls input[type="number"],
-    .controls input[type="date"] {
-      padding: 6px 8px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--white);
-    }
-    button {
-      background: var(--brand);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 7px 14px;
-      cursor: pointer;
-    }
-    button:hover { opacity: 0.85; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--white);
-      box-shadow: 0 0 10px rgba(0,0,0,0.08);
-    }
-    th, td {
-      border: 1px solid var(--border);
-      padding: 10px;
-      text-align: center;
-    }
-    th {
-      background: var(--brand);
-      color: var(--white);
-    }
-    tbody tr.completed {
-      background-color: var(--ok);
-      color: var(--ok-text);
-    }
-    input[type="checkbox"] {
-      transform: scale(1.2);
-    }
-    tfoot td {
-      font-weight: bold;
-      background: #eef;
-      color: #000;
-      text-align: center;
-    }
-    @media (max-width: 768px) {
-      table, th, td { font-size: 12px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quran Memorization Planner</title>
+<style>
+:root {
+  --brand:#2c3e50; --bg:#f5f5f5; --ok:#d4edda; --ok-text:#155724;
+  --border:#ccc; --white:#fff; --gold:#fff8dc;
+}
+body {font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);padding:20px;}
+h1{text-align:center;color:var(--brand);margin-bottom:16px;}
+.controls{max-width:960px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;color:#333;}
+.controls label{font-size:14px;}
+.controls input[type="number"],.controls input[type="date"]{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--white);}
+button{background:var(--brand);color:white;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;}
+button:hover{opacity:.85;}
+table{width:100%;border-collapse:collapse;background:var(--white);box-shadow:0 0 10px rgba(0,0,0,0.08);}
+th,td{border:1px solid var(--border);padding:10px;text-align:center;}
+th{background:var(--brand);color:var(--white);}
+tbody tr.completed{background-color:var(--ok);color:var(--ok-text);}
+tbody tr.recite{background:var(--gold);font-weight:bold;}
+input[type="checkbox"]{transform:scale(1.2);}
+tfoot td{font-weight:bold;background:#eef;color:#000;text-align:center;}
+@media(max-width:768px){table,th,td{font-size:12px;}}
+</style>
 </head>
 <body>
-  <h1>Quran Memorization Planner</h1>
+<h1>Quran Memorization Planner</h1>
 
-  <div class="controls">
-    <label>Start Page: <input id="startPageInput" type="number" min="1" max="604" value="103"></label>
-    <label>End Page: <input id="endPageInput" type="number" min="1" max="604" value="604"></label>
-    <label>Pages/Day: <input id="ppdInput" type="number" min="1" max="10" value="2"></label>
-    <label>Start Date: <input id="startDateInput" type="date"></label>
-    <button id="generateBtn">Generate</button>
-  </div>
+<div class="controls">
+  <label>Start Page:<input id="startPageInput" type="number" min="1" max="604" value="103"></label>
+  <label>End Page:<input id="endPageInput" type="number" min="1" max="604" value="604"></label>
+  <label>Pages/Day:<input id="ppdInput" type="number" min="1" max="10" value="2"></label>
+  <label>Start Date:<input id="startDateInput" type="date"></label>
+  <button id="generateBtn">Generate</button>
+</div>
 
-  <table id="planner-table">
-    <thead>
-      <tr>
-        <th>✅</th>
-        <th>Day #</th>
-        <th>Revise<br>(1 Juz/day)</th>
-        <th>Connect<br>(Start of current Juz → Last memorized)</th>
-        <th>Memorize</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-    <tfoot>
-      <tr><td colspan="5" id="summary">📅 Select a Start Date to see expected Khatm date below.</td></tr>
-    </tfoot>
-  </table>
+<table id="planner-table">
+<thead>
+<tr>
+  <th>✅</th>
+  <th>Day #</th>
+  <th>Revise<br>(1 Juz/day)</th>
+  <th>Connect<br>(Start of current Juz → Last memorized / Full Juz at end)</th>
+  <th>Memorize<br>(2 Pages)</th>
+</tr>
+</thead>
+<tbody></tbody>
+<tfoot><tr><td colspan="5" id="summary">📅 Select a Start Date to see expected Khatm date below.</td></tr></tfoot>
+</table>
 
-  <script>
-    // === Juz start pages ===
-    const juzStartPages = [
-      1,22,42,62,82,102,121,141,162,182,
-      202,222,242,262,282,302,322,342,362,382,
-      402,422,442,462,482,502,522,542,562,582
-    ];
+<script>
+// === Juz start pages ===
+const juzStartPages=[1,22,42,62,82,102,121,141,162,182,202,222,242,262,282,302,322,342,362,382,402,422,442,462,482,502,522,542,562,582];
+function getJuzForPage(p){for(let i=juzStartPages.length-1;i>=0;i--)if(p>=juzStartPages[i])return i+1;return 1;}
 
-    function getJuzForPage(page) {
-      for (let i = juzStartPages.length - 1; i >= 0; i--) {
-        if (page >= juzStartPages[i]) return i + 1;
-      }
-      return 1;
+// === Hijri conversion ===
+const hijriMonths=["محرم","صفر","ربيع الأول","ربيع الآخر","جمادى الأولى","جمادى الآخرة","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"];
+function gregorianToHijri(d){
+  const g=d.getTime(),jd=Math.floor(g/86400000+2440587.5),l=jd-1948440+10632,n=Math.floor((l-1)/10631),
+        l2=l-10631*n+354,j=Math.floor((10985-l2)/5316)*Math.floor(50*l2/17719)+Math.floor(l2/5670)*Math.floor(43*l2/15238),
+        l3=l2-Math.floor((30-j)/15)*Math.floor(17719*j/50)-Math.floor(j/16)*Math.floor(15238*j/43)+29,
+        m=Math.floor(24*l3/709),day=l3-Math.floor(709*m/24),year=30*n+j-30;
+  return{day,month:m,year};
+}
+const toArabic=n=>n.toString().replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
+const hijriStr=h=>`${toArabic(h.day)} ${hijriMonths[h.month-1]} ${toArabic(h.year)}`;
+const weekday=d=>d.toLocaleDateString('en-US',{weekday:'long'});
+function engDate(d){
+  const x=d.getDate(),s=(x%10==1&&x!=11)?"st":(x%10==2&&x!=12)?"nd":(x%10==3&&x!=13)?"rd":"th";
+  return`${x}${s} ${d.toLocaleString('en-US',{month:'long'})} ${d.getFullYear()}`;
+}
+
+// === Build table ===
+function buildTable(){
+  const startP=+startPageInput.value||103,endP=+endPageInput.value||604,ppd=+ppdInput.value||2;
+  const sDateVal=startDateInput.value;
+  const tbody=document.querySelector('#planner-table tbody'),sum=document.getElementById('summary');
+  tbody.innerHTML='';sum.innerHTML='📅 Select a Start Date to see expected Khatm date below.';
+
+  let p=startP,day=1;
+  let curJuz=getJuzForPage(startP);
+  let curJuzStart=juzStartPages[curJuz-1];
+  let nextJuzStart=juzStartPages[curJuz]||605;
+  let curJuzEnd=nextJuzStart-1;
+  let revise=1;
+
+  while(p<=endP){
+    const memStart=p;
+    const memEnd=Math.min(endP,memStart+ppd-1);
+    const memJuz=getJuzForPage(memEnd);
+
+    // If entering a new Juz, update range
+    if(memJuz!==curJuz){
+      curJuz=memJuz;
+      curJuzStart=juzStartPages[curJuz-1];
+      nextJuzStart=juzStartPages[curJuz]||605;
+      curJuzEnd=nextJuzStart-1;
+      revise=1; // reset revise to loop 1→current Juz only
     }
 
-    // === Hijri conversion ===
-    const hijriMonths = [
-      "محرم", "صفر", "ربيع الأول", "ربيع الآخر",
-      "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان",
-      "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
-    ];
-    function gregorianToHijri(dateObj) {
-      const gTime = dateObj.getTime();
-      const jd = Math.floor((gTime / 86400000) + 2440587.5);
-      const l = jd - 1948440 + 10632;
-      const n = Math.floor((l - 1) / 10631);
-      const l2 = l - 10631 * n + 354;
-      const j = (Math.floor((10985 - l2) / 5316)) * (Math.floor((50 * l2) / 17719)) +
-                (Math.floor(l2 / 5670)) * (Math.floor((43 * l2) / 15238));
-      const l3 = l2 - (Math.floor((30 - j) / 15)) * (Math.floor((17719 * j) / 50)) -
-                 (Math.floor(j / 16)) * (Math.floor((15238 * j) / 43)) + 29;
-      const month = Math.floor((24 * l3) / 709);
-      const day = l3 - Math.floor((709 * month) / 24);
-      const year = 30 * n + j - 30;
-      return { day, month, year };
+    const connectStart=curJuzStart;
+    const connectEnd=memStart-1;
+
+    const tr=document.createElement('tr');
+    const tdCheck=document.createElement('td');
+    const cb=document.createElement('input');
+    cb.type='checkbox';
+    cb.onchange=()=>tr.classList.toggle('completed',cb.checked);
+    tdCheck.append(cb);
+    tr.append(tdCheck);
+
+    const tdDay=document.createElement('td');
+    tdDay.textContent=`Day ${day}`;
+    tr.append(tdDay);
+
+    const tdRev=document.createElement('td');
+    tdRev.textContent=`Juz ${revise}`;
+    tr.append(tdRev);
+
+    const tdConn=document.createElement('td');
+    if(memEnd>=curJuzEnd){
+      tdConn.textContent=`Recite entire Juz ${curJuz} (Pg ${connectStart}–${curJuzEnd})`;
+      tr.classList.add("recite");
+    }else{
+      tdConn.textContent=connectEnd>=connectStart?`Pg ${connectStart}–${connectEnd}`:`Pg ${connectStart}`;
     }
-    function toArabicNumber(num) { return num.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]); }
-    function formatHijriReadable(h) {
-      const monthName = hijriMonths[h.month - 1] || "";
-      return `${toArabicNumber(h.day)} ${monthName} ${toArabicNumber(h.year)}`;
-    }
-    function weekdayEnglish(dateObj) {
-      return dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-    }
-    function formatEnglishDate(dateObj) {
-      const day = dateObj.getDate();
-      const suffix = (day % 10 === 1 && day !== 11) ? "st"
-        : (day % 10 === 2 && day !== 12) ? "nd"
-        : (day % 10 === 3 && day !== 13) ? "rd" : "th";
-      const dayWithSuffix = `${day}${suffix}`;
-      const month = dateObj.toLocaleString('en-US', { month: 'long' });
-      const year = dateObj.getFullYear();
-      return `${dayWithSuffix} ${month} ${year}`;
-    }
+    tr.append(tdConn);
 
-    // === Table builder ===
-    function buildTable() {
-      const startPage = Number(document.getElementById('startPageInput').value) || 103;
-      const endPage = Number(document.getElementById('endPageInput').value) || 604;
-      const pagesPerDay = Number(document.getElementById('ppdInput').value) || 2;
-      const startDateValue = document.getElementById('startDateInput').value;
+    const tdMem=document.createElement('td');
+    tdMem.textContent=`Pg ${memStart}–${memEnd}`;
+    tr.append(tdMem);
 
-      const tbody = document.querySelector('#planner-table tbody');
-      const summary = document.getElementById('summary');
-      tbody.innerHTML = '';
-      summary.innerHTML = '📅 Select a Start Date to see expected Khatm date below.';
+    tbody.append(tr);
 
-      let currentPage = startPage;
-      let day = 1;
-      let reviseCounter = 1;
-      let currentJuz = getJuzForPage(startPage);
-      let currentJuzStart = juzStartPages[currentJuz - 1];
+    p+=ppd;
+    day++;
+    revise = revise < curJuz ? revise + 1 : 1; // ✅ loop 1→current Juz only
+  }
 
-      while (currentPage <= endPage) {
-        const memorizeStart = currentPage;
-        const memorizeEnd = Math.min(endPage, memorizeStart + pagesPerDay - 1);
-        const memorizeJuz = getJuzForPage(memorizeEnd);
+  if(sDateVal){
+    const total=day-1,sd=new Date(sDateVal),kd=new Date(sd);
+    kd.setDate(kd.getDate()+total-1);
+    const h=gregorianToHijri(kd);
+    sum.innerHTML=`📖 <strong>Expected Khatm Date:</strong><br>${weekday(kd)}, ${engDate(kd)}<br>${hijriStr(h)}<br><br>إن شاء الله`;
+  }
+}
 
-        // If we enter a new Juz, reset connect start
-        if (memorizeJuz !== currentJuz) {
-          currentJuz = memorizeJuz;
-          currentJuzStart = juzStartPages[currentJuz - 1];
-        }
-
-        const connectStart = currentJuzStart;
-        const connectEnd = memorizeStart - 1; // last page already memorized
-
-        const reviseJuz = reviseCounter;
-        reviseCounter = (reviseCounter % 30) + 1;
-
-        const tr = document.createElement('tr');
-
-        const tdCheck = document.createElement('td');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.addEventListener('change',()=> tr.classList.toggle('completed',checkbox.checked));
-        tdCheck.appendChild(checkbox);
-        tr.appendChild(tdCheck);
-
-        const tdDay = document.createElement('td');
-        tdDay.textContent = `Day ${day}`;
-        tr.appendChild(tdDay);
-
-        const tdRevise = document.createElement('td');
-        tdRevise.textContent = `Juz ${reviseJuz}`;
-        tr.appendChild(tdRevise);
-
-        const tdConnect = document.createElement('td');
-        tdConnect.textContent = connectEnd >= connectStart ? `Pg ${connectStart}-${connectEnd}` : `Pg ${connectStart}`;
-        tr.appendChild(tdConnect);
-
-        const tdMem = document.createElement('td');
-        tdMem.textContent = `Pg ${memorizeStart}-${memorizeEnd}`;
-        tr.appendChild(tdMem);
-
-        tbody.appendChild(tr);
-
-        currentPage += pagesPerDay;
-        day++;
-      }
-
-      // === Khatm date ===
-      if (startDateValue) {
-        const totalDays = day - 1;
-        const startDate = new Date(startDateValue);
-        const khatmDate = new Date(startDate);
-        khatmDate.setDate(khatmDate.getDate() + totalDays - 1);
-
-        const hijri = gregorianToHijri(khatmDate);
-        const hijriStr = formatHijriReadable(hijri);
-        const englishDay = weekdayEnglish(khatmDate);
-        const englishDate = formatEnglishDate(khatmDate);
-
-        summary.innerHTML = `
-          📖 <strong>Expected Khatm Date:</strong><br>
-          ${englishDay}, ${englishDate}<br>
-          ${hijriStr}<br>
-          إن شاء الله
-        `;
-      }
-    }
-
-    document.getElementById('generateBtn').addEventListener('click', buildTable);
-  </script>
+generateBtn.onclick=buildTable;
+</script>
 </body>
 </html>
