@@ -90,19 +90,6 @@ function buildTable(){
   while(p<=endP){
     const memStart=p;
     const memEnd=Math.min(endP,memStart+ppd-1);
-    const memJuz=getJuzForPage(memEnd);
-
-    // If entering a new Juz, update range
-    if(memJuz!==curJuz){
-      curJuz=memJuz;
-      curJuzStart=juzStartPages[curJuz-1];
-      nextJuzStart=juzStartPages[curJuz]||605;
-      curJuzEnd=nextJuzStart-1;
-      revise=1; // reset revise to loop 1→current Juz only
-    }
-
-    const connectStart=curJuzStart;
-    const connectEnd=memStart-1;
 
     const tr=document.createElement('tr');
     const tdCheck=document.createElement('td');
@@ -121,10 +108,14 @@ function buildTable(){
     tr.append(tdRev);
 
     const tdConn=document.createElement('td');
+
     if(memEnd>=curJuzEnd){
-      tdConn.textContent=`Recite entire Juz ${curJuz} (Pg ${connectStart}–${curJuzEnd})`;
+      // ✅ You finish a Juz today → Highlight & “Recite entire Juz …”
+      tdConn.textContent=`Recite entire Juz ${curJuz} (Pg ${curJuzStart}–${curJuzEnd})`;
       tr.classList.add("recite");
-    }else{
+    } else {
+      const connectStart=curJuzStart;
+      const connectEnd=memStart-1;
       tdConn.textContent=connectEnd>=connectStart?`Pg ${connectStart}–${connectEnd}`:`Pg ${connectStart}`;
     }
     tr.append(tdConn);
@@ -132,14 +123,26 @@ function buildTable(){
     const tdMem=document.createElement('td');
     tdMem.textContent=`Pg ${memStart}–${memEnd}`;
     tr.append(tdMem);
-
     tbody.append(tr);
 
+    // Advance to next pages
     p+=ppd;
     day++;
-    revise = revise < curJuz ? revise + 1 : 1; // ✅ loop 1→current Juz only
+
+    // ✅ Handle revision looping (1 → current Juz)
+    revise = revise < curJuz ? revise + 1 : 1;
+
+    // ✅ If we just finished a Juz, update Juz info for next iteration
+    if(memEnd>=curJuzEnd){
+      curJuz++;
+      curJuzStart=juzStartPages[curJuz-1]||605;
+      nextJuzStart=juzStartPages[curJuz]||605;
+      curJuzEnd=(nextJuzStart?nextJuzStart-1:604);
+      revise=1; // reset revise when new Juz starts
+    }
   }
 
+  // === Khatm Date ===
   if(sDateVal){
     const total=day-1,sd=new Date(sDateVal),kd=new Date(sd);
     kd.setDate(kd.getDate()+total-1);
