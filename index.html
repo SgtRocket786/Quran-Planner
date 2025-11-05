@@ -13,7 +13,7 @@ body {font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backg
 h1{text-align:center;color:var(--brand);margin-bottom:16px;}
 .controls{max-width:960px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;color:#333;}
 .controls label{font-size:14px;}
-.controls input[type="number"],.controls input[type="date"]{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--white);}
+.controls input[type="number"],.controls input[type="date"],.controls select{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--white);}
 button{background:var(--brand);color:white;border:none;border-radius:8px;padding:7px 14px;cursor:pointer;}
 button:hover{opacity:.85;}
 table{width:100%;border-collapse:collapse;background:var(--white);box-shadow:0 0 10px rgba(0,0,0,0.08);}
@@ -35,6 +35,12 @@ tfoot td{font-weight:bold;background:#eef;color:#000;text-align:center;}
   <label>End Page:<input id="endPageInput" type="number" min="1" max="604" value="604"></label>
   <label>Pages/Day:<input id="ppdInput" type="number" min="1" max="10" value="2"></label>
   <label>Start Date:<input id="startDateInput" type="date"></label>
+  <label>Date Format:
+    <select id="dateFormatSelect">
+      <option value="gregorian" selected>Gregorian</option>
+      <option value="hijri">Hijri</option>
+    </select>
+  </label>
   <button id="generateBtn">Generate</button>
 </div>
 
@@ -80,16 +86,12 @@ function engDate(d){
 function buildTable(){
   const startP=+startPageInput.value||103,endP=+endPageInput.value||604,ppd=+ppdInput.value||2;
   const sDateVal=startDateInput.value;
+  const dateMode=document.getElementById('dateFormatSelect').value;
   const tbody=document.querySelector('#planner-table tbody'),sum=document.getElementById('summary');
   const dateHeader=document.querySelector('.date-col');
   tbody.innerHTML='';sum.innerHTML='📅 Select a Start Date to see expected Khatm date below.';
   
-  // Hide Date column if no start date
-  if(!sDateVal){
-    dateHeader.classList.add('hidden');
-  } else {
-    dateHeader.classList.remove('hidden');
-  }
+  if(!sDateVal){ dateHeader.classList.add('hidden'); } else { dateHeader.classList.remove('hidden'); }
 
   let p=startP,day=1;
   let curJuz=getJuzForPage(startP);
@@ -116,12 +118,17 @@ function buildTable(){
     tdDay.textContent=`Day ${day}`;
     tr.append(tdDay);
 
-    // === Date column ===
+    // === Date column (Gregorian or Hijri) ===
     if(sDateVal){
       const tdDate=document.createElement('td');
       const currentDate = new Date(startDate);
       currentDate.setDate(startDate.getDate()+day-1);
-      tdDate.textContent=currentDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      if(dateMode === "hijri"){
+        const h = gregorianToHijri(currentDate);
+        tdDate.textContent = hijriStr(h);
+      } else {
+        tdDate.textContent = currentDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      }
       tr.append(tdDate);
     }
 
@@ -142,9 +149,13 @@ function buildTable(){
     }
     tr.append(tdConn);
 
-    // === Memorize ===
+    // === Memorize === (single page vs range)
     const tdMem=document.createElement('td');
-    tdMem.textContent=`Pg ${memStart}–${memEnd}`;
+    if (ppd === 1) {
+      tdMem.textContent = `Pg ${memStart}`;
+    } else {
+      tdMem.textContent = `Pg ${memStart}–${memEnd}`;
+    }
     tr.append(tdMem);
 
     // === Listen (next day's Revise) ===
@@ -179,6 +190,7 @@ function buildTable(){
 }
 
 generateBtn.onclick=buildTable;
+dateFormatSelect.onchange=buildTable; // dynamically update when toggling
 </script>
 </body>
 </html>
