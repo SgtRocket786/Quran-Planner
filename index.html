@@ -24,6 +24,7 @@ tbody tr.recite{background:var(--gold);font-weight:bold;}
 input[type="checkbox"]{transform:scale(1.2);}
 tfoot td{font-weight:bold;background:#eef;color:#000;text-align:center;}
 @media(max-width:768px){table,th,td{font-size:12px;}}
+.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -39,10 +40,10 @@ tfoot td{font-weight:bold;background:#eef;color:#000;text-align:center;}
 
 <table id="planner-table">
 <thead>
-<tr>
+<tr id="header-row">
   <th>✅</th>
   <th>Day #</th>
-  <th>Date</th>
+  <th class="date-col">Date</th>
   <th>Revise</th>
   <th>Connect<br></th>
   <th>Memorize</th>
@@ -80,7 +81,15 @@ function buildTable(){
   const startP=+startPageInput.value||103,endP=+endPageInput.value||604,ppd=+ppdInput.value||2;
   const sDateVal=startDateInput.value;
   const tbody=document.querySelector('#planner-table tbody'),sum=document.getElementById('summary');
+  const dateHeader=document.querySelector('.date-col');
   tbody.innerHTML='';sum.innerHTML='📅 Select a Start Date to see expected Khatm date below.';
+  
+  // Hide Date column if no start date
+  if(!sDateVal){
+    dateHeader.classList.add('hidden');
+  } else {
+    dateHeader.classList.remove('hidden');
+  }
 
   let p=startP,day=1;
   let curJuz=getJuzForPage(startP);
@@ -89,6 +98,7 @@ function buildTable(){
   let curJuzEnd=nextJuzStart-1;
   let revise=1;
   let highestJuz=curJuz;
+  const startDate = sDateVal ? new Date(sDateVal) : null;
 
   while(p<=endP){
     const memStart=p;
@@ -106,10 +116,21 @@ function buildTable(){
     tdDay.textContent=`Day ${day}`;
     tr.append(tdDay);
 
+    // === Date column ===
+    if(sDateVal){
+      const tdDate=document.createElement('td');
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate()+day-1);
+      tdDate.textContent=currentDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      tr.append(tdDate);
+    }
+
+    // === Revise ===
     const tdRev=document.createElement('td');
     tdRev.textContent=`Juz ${revise}`;
     tr.append(tdRev);
 
+    // === Connect ===
     const tdConn=document.createElement('td');
     if(memEnd>=curJuzEnd){
       tdConn.textContent=`Recite entire Juz ${curJuz} (Pg ${curJuzStart}–${curJuzEnd})`;
@@ -121,9 +142,16 @@ function buildTable(){
     }
     tr.append(tdConn);
 
+    // === Memorize ===
     const tdMem=document.createElement('td');
     tdMem.textContent=`Pg ${memStart}–${memEnd}`;
     tr.append(tdMem);
+
+    // === Listen (next day's Revise) ===
+    const tdListen=document.createElement('td');
+    const nextJuz = revise < highestJuz ? revise + 1 : 1;
+    tdListen.textContent = `Juz ${nextJuz}`;
+    tr.append(tdListen);
 
     tbody.append(tr);
 
@@ -131,11 +159,9 @@ function buildTable(){
     p+=ppd;
     day++;
 
-    // Update revision logic
     highestJuz=Math.max(highestJuz,curJuz);
     revise = revise < highestJuz ? revise + 1 : 1;
 
-    // If we just finished a Juz, move to next Juz
     if(memEnd>=curJuzEnd){
       curJuz++;
       curJuzStart=juzStartPages[curJuz-1]||605;
