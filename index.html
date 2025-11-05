@@ -30,7 +30,7 @@ tfoot td{font-weight:bold;background:#eef;color:#000;text-align:center;}
 <h1>Quran Memorization Planner</h1>
 
 <div class="controls">
-  <label>Start Page: (odd number)<input id="startPageInput" type="number" min="1" max="604" value="131"></label>
+  <label>Start Page: (odd number)<input id="startPageInput" type="number" min="1" max="604" value="141"></label>
   <label>End Page:<input id="endPageInput" type="number" min="1" max="604" value="604"></label>
   <label>Pages/Day:<input id="ppdInput" type="number" min="1" max="10" value="2"></label>
   <label>Start Date:<input id="startDateInput" type="date"></label>
@@ -42,13 +42,15 @@ tfoot td{font-weight:bold;background:#eef;color:#000;text-align:center;}
 <tr>
   <th>✅</th>
   <th>Day #</th>
-  <th>Revise<br>(1 Juz/day)</th>
+  <th>Date</th>
+  <th>Revise</th>
   <th>Connect<br></th>
-  <th>Memorize<br>(2 Pages)</th>
+  <th>Memorize</th>
+  <th>Listen</th>
 </tr>
 </thead>
 <tbody></tbody>
-<tfoot><tr><td colspan="5" id="summary">📅 Select a Start Date to see expected Khatm date below.</td></tr></tfoot>
+<tfoot><tr><td colspan="7" id="summary">📅 Select a Start Date to see expected Khatm date below.</td></tr></tfoot>
 </table>
 
 <script>
