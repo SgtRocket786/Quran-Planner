@@ -41,6 +41,8 @@ tfoot td{font-weight:bold;background:#eef;color:#000;text-align:center;}
       <option value="hijri">Hijri</option>
     </select>
   </label>
+  <!-- NEW: user-chosen starting Juz for the revise loop -->
+  <label>Start Revise From Juz:<input id="reviseStartInput" type="number" min="1" max="30" value="1"></label>
   <button id="generateBtn">Generate</button>
 </div>
 
@@ -87,6 +89,8 @@ function buildTable(){
   const startP=+startPageInput.value||103,endP=+endPageInput.value||604,ppd=+ppdInput.value||2;
   const sDateVal=startDateInput.value;
   const dateMode=document.getElementById('dateFormatSelect').value;
+  const startReviseInput = Math.max(1, Math.min(30, +document.getElementById('reviseStartInput').value||1));
+
   const tbody=document.querySelector('#planner-table tbody'),sum=document.getElementById('summary');
   const dateHeader=document.querySelector('.date-col');
   tbody.innerHTML='';sum.innerHTML='📅 Select a Start Date to see expected Khatm date below.';
@@ -98,8 +102,11 @@ function buildTable(){
   let curJuzStart=juzStartPages[curJuz-1];
   let nextJuzStart=juzStartPages[curJuz]||605;
   let curJuzEnd=nextJuzStart-1;
-  let revise=1;
   let highestJuz=curJuz;
+
+  // Initialize revise to start at the user-chosen Juz, wrapped into 1..highestJuz
+  let revise = ((startReviseInput - 1) % highestJuz) + 1;
+
   const startDate = sDateVal ? new Date(sDateVal) : null;
 
   while(p<=endP){
@@ -149,19 +156,16 @@ function buildTable(){
     }
     tr.append(tdConn);
 
-    // === Memorize === (single page vs range)
+    // === Memorize (single page vs range) ===
     const tdMem=document.createElement('td');
-    if (ppd === 1) {
-      tdMem.textContent = `Pg ${memStart}`;
-    } else {
-      tdMem.textContent = `Pg ${memStart}–${memEnd}`;
-    }
+    if (ppd === 1) { tdMem.textContent = `Pg ${memStart}`; }
+    else { tdMem.textContent = `Pg ${memStart}–${memEnd}`; }
     tr.append(tdMem);
 
     // === Listen (next day's Revise) ===
     const tdListen=document.createElement('td');
-    const nextJuz = revise < highestJuz ? revise + 1 : 1;
-    tdListen.textContent = `Juz ${nextJuz}`;
+    const nextJuzForListen = revise < highestJuz ? revise + 1 : 1;
+    tdListen.textContent = `Juz ${nextJuzForListen}`;
     tr.append(tdListen);
 
     tbody.append(tr);
@@ -170,14 +174,21 @@ function buildTable(){
     p+=ppd;
     day++;
 
+    // Expand highestJuz if we moved into a new one (affects loop ceiling)
     highestJuz=Math.max(highestJuz,curJuz);
+
+    // Advance revise within 1..highestJuz, looping back to 1
     revise = revise < highestJuz ? revise + 1 : 1;
 
+    // If we just finished a Juz, move to the next Juz (Connect resets automatically next loop)
     if(memEnd>=curJuzEnd){
       curJuz++;
       curJuzStart=juzStartPages[curJuz-1]||605;
       nextJuzStart=juzStartPages[curJuz]||605;
       curJuzEnd=(nextJuzStart?nextJuzStart-1:604);
+
+      // If highestJuz grew this iteration and the user's chosen start was beyond previous range,
+      // the current 'revise' progression already continues smoothly from where it is.
     }
   }
 
@@ -190,7 +201,7 @@ function buildTable(){
 }
 
 generateBtn.onclick=buildTable;
-dateFormatSelect.onchange=buildTable; // dynamically update when toggling
+dateFormatSelect.onchange=buildTable;
 </script>
 </body>
 </html>
