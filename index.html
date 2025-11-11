@@ -122,7 +122,7 @@ function buildTable(){
     if(sDateVal){
       const tdDate=document.createElement('td');
       const currentDate = new Date(startDate);
-      currentDate.setDate(startDate.getDate()+day-1);
+      currentDate.setDate(startDate.getDate()+day);
       if(dateMode === "hijri"){
         const h = gregorianToHijri(currentDate);
         tdDate.textContent = hijriStr(h);
