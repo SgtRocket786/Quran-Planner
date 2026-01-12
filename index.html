@@ -210,11 +210,13 @@ function buildTable(){
     const memStart=p, memEnd=Math.min(endP,p+ppd-1);
     const tr=document.createElement("tr");
 
-    // Checkbox
+    // Checkbox (FIXED)
+    const tdCheck=document.createElement("td");
     const cb=document.createElement("input");
     cb.type="checkbox";
     cb.onchange=()=>tr.classList.toggle("completed",cb.checked);
-    tr.appendChild(Object.assign(document.createElement("td"),{appendChild:cb}));
+    tdCheck.appendChild(cb);
+    tr.appendChild(tdCheck);
 
     tr.insertCell().textContent=`Day ${day}`;
 
@@ -227,10 +229,8 @@ function buildTable(){
                            : d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
     }
 
-    // Revise
     tr.insertCell().textContent=`Juz ${revise}`;
 
-    // Connect
     const conn=tr.insertCell();
     if(pendingRecite){
       conn.textContent=`Recite entire Juz ${pendingRecite.juz} (Pg ${pendingRecite.start}–${pendingRecite.end})`;
@@ -241,16 +241,13 @@ function buildTable(){
       conn.textContent=end>=curJuzStart?`Pg ${curJuzStart}–${end}`:`Pg ${curJuzStart}`;
     }
 
-    // Memorize
     tr.insertCell().textContent =
       ppd===1 ? `Pg ${memStart}` : `Pg ${memStart}–${memEnd}`;
 
-    // Listen
     tr.insertCell().textContent=`Juz ${revise<highestJuz?revise+1:1}`;
 
     tbody.appendChild(tr);
 
-    // Advance
     p+=ppd; day++;
     highestJuz=Math.max(highestJuz,curJuz);
     revise=revise<highestJuz?revise+1:1;
