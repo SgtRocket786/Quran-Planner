@@ -208,18 +208,13 @@ function buildTable(){
 
   const startDate=sDateVal?new Date(sDateVal):null;
 
-  // If starting mid-juz, Day 1 connect recites ENTIRE previous juz
-  let pendingRecite=null;
-  if(curJuz > 1 && startP > curJuzStart){
-    const prevJuz = curJuz - 1;
-    const prevStart = juzStartPages[prevJuz - 1];
-    const prevEnd = curJuzStart - 1;
-    pendingRecite = { juz: prevJuz, start: prevStart, end: prevEnd };
-  }
+  // ✅ IMPORTANT: removed "mid-juz preload" completely.
+  // pendingRecite is ONLY for "recite the juz you JUST finished" on the NEXT day.
+  let pendingRecite = null;
 
-  // Track when memorization is finished; then keep rows until revise hits highestJuz (cycle completes)
+  // Track when memorization is finished; then keep rows until revise cycle completes
   let memFinished = false;
-  let memFinishedAtRevise = null; // revise value shown on the last memorization row
+  let memFinishedAtRevise = null; // revise shown on last memorization row
 
   while(true){
     const memActive = !memFinished && (p <= endP);
@@ -239,7 +234,7 @@ function buildTable(){
 
     tr.insertCell().textContent=`Day ${day}`;
 
-    // Date (remove -1; Day 1 = start date)
+    // Date (Day 1 = selected start date)
     if(startDate){
       const d=new Date(startDate);
       d.setDate(startDate.getDate()+day);
@@ -284,13 +279,11 @@ function buildTable(){
     // ---- advance day/revise for next row ----
     day++;
 
-    // If memorization is done, highestJuz should stay (will be 30 for full Qur'an)
-    // Otherwise update highestJuz based on memorization juz progression
     if(memActive){
       // Advance memorization pages
       p += ppd;
 
-      // Update highestJuz based on current mem juz
+      // Update highestJuz based on memorization progress
       highestJuz = Math.max(highestJuz, curJuz);
 
       // If we finished the current memorization juz today, schedule "recite entire juz" for tomorrow
@@ -305,8 +298,7 @@ function buildTable(){
       // If we just crossed beyond endP, mark memorization finished
       if(p > endP){
         memFinished = true;
-        memFinishedAtRevise = revise; // the revise value shown on the LAST memorization row
-        // After finishing Qur'an, the loop target is completing up to highestJuz (typically 30)
+        memFinishedAtRevise = revise; // revise shown on last memorization row
         pendingRecite = null; // per your request, replace other cells with "-"
       }
     }
@@ -316,24 +308,16 @@ function buildTable(){
 
     // ---- stop condition ----
     if(memFinished){
-      // If the last memorization row already had revise == highestJuz, the cycle is already complete
+      // If last memorization row already had revise == highestJuz, cycle already complete
       if(memFinishedAtRevise === highestJuz) break;
 
-      // Otherwise, keep adding rows until we reach revise == highestJuz (cycle completion)
-      // Note: 'revise' was advanced for the NEXT row; current row used the previous value.
-      // We stop right AFTER we render a row whose revise equals highestJuz.
-      // That means: when the row we just rendered had revise == highestJuz.
+      // Stop after rendering a row with revise == highestJuz
       const justRenderedRevise = revise === 1 ? highestJuz : (revise - 1);
       if(justRenderedRevise === highestJuz) break;
-    } else {
-      // normal memorization loop continues until memFinished flips true
-      if(p > endP && memFinished) {
-        // (redundant safety)
-      }
     }
   }
 
-  // Summary (end date should be based on total rows generated)
+  // Summary (end date based on total rows generated)
   if(startDate){
     const totalRows = day - 1;
     const end=new Date(startDate);
