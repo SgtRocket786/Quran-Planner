@@ -223,7 +223,7 @@ function buildTable(){
     // Date
     if(startDate){
       const d=new Date(startDate);
-      d.setDate(startDate.getDate()+day-1);
+      d.setDate(startDate.getDate()+day);
       tr.insertCell().textContent =
         dateMode==="hijri" ? hijriStr(gregorianToHijri(d))
                            : d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
