@@ -109,6 +109,9 @@ function buildTable(){
 
   const startDate = sDateVal ? new Date(sDateVal) : null;
 
+  // NEW: if you finished a Juz yesterday, today's Connect becomes "Recite entire Juz ..."
+  let pendingRecite = null;
+
   while(p<=endP){
     const memStart=p;
     const memEnd=Math.min(endP,memStart+ppd-1);
@@ -146,14 +149,19 @@ function buildTable(){
 
     // === Connect ===
     const tdConn=document.createElement('td');
-    if(memEnd>=curJuzEnd){
-      tdConn.textContent=`Recite entire Juz ${curJuz} (Pg ${curJuzStart}–${curJuzEnd})`;
+
+    // If you completed a Juz yesterday, TODAY you must recite that whole Juz first.
+    if(pendingRecite){
+      tdConn.textContent = `Recite entire Juz ${pendingRecite.juz} (Pg ${pendingRecite.start}–${pendingRecite.end})`;
       tr.classList.add("recite");
+      pendingRecite = null; // consume it today
     } else {
+      // Normal connect: start of current memorization Juz -> last page memorized before today's new pages
       const connectStart=curJuzStart;
       const connectEnd=memStart-1;
       tdConn.textContent=connectEnd>=connectStart?`Pg ${connectStart}–${connectEnd}`:`Pg ${connectStart}`;
     }
+
     tr.append(tdConn);
 
     // === Memorize (single page vs range) ===
@@ -170,7 +178,9 @@ function buildTable(){
 
     tbody.append(tr);
 
-    // advance counters
+    // --- AFTER rendering the row, update state for next loop ---
+
+    // advance pages/day counter
     p+=ppd;
     day++;
 
@@ -180,15 +190,15 @@ function buildTable(){
     // Advance revise within 1..highestJuz, looping back to 1
     revise = revise < highestJuz ? revise + 1 : 1;
 
-    // If we just finished a Juz, move to the next Juz (Connect resets automatically next loop)
+    // If we finished the current memorization Juz today, schedule the FULL-JUZ recitation for tomorrow
     if(memEnd>=curJuzEnd){
+      pendingRecite = { juz: curJuz, start: curJuzStart, end: curJuzEnd };
+
+      // Move to next Juz for subsequent memorization/connect ranges
       curJuz++;
       curJuzStart=juzStartPages[curJuz-1]||605;
       nextJuzStart=juzStartPages[curJuz]||605;
       curJuzEnd=(nextJuzStart?nextJuzStart-1:604);
-
-      // If highestJuz grew this iteration and the user's chosen start was beyond previous range,
-      // the current 'revise' progression already continues smoothly from where it is.
     }
   }
 
