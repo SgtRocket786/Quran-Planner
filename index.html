@@ -201,16 +201,26 @@ function buildTable(){
   let curJuz=getJuzForPage(startP);
   let curJuzStart=juzStartPages[curJuz-1];
   let curJuzEnd=(juzStartPages[curJuz]||605)-1;
+
   let highestJuz=curJuz;
   let revise=((startRevise-1)%highestJuz)+1;
-  let pendingRecite=null;
+
   const startDate=sDateVal?new Date(sDateVal):null;
+
+  // ✅ NEW: if starting mid-juz, Day 1 connect should be reciting the ENTIRE previous Juz
+  let pendingRecite=null;
+  if(curJuz > 1 && startP > curJuzStart){
+    const prevJuz = curJuz - 1;
+    const prevStart = juzStartPages[prevJuz - 1];
+    const prevEnd = curJuzStart - 1;
+    pendingRecite = { juz: prevJuz, start: prevStart, end: prevEnd };
+  }
 
   while(p<=endP){
     const memStart=p, memEnd=Math.min(endP,p+ppd-1);
     const tr=document.createElement("tr");
 
-    // Checkbox (FIXED)
+    // Checkbox
     const tdCheck=document.createElement("td");
     const cb=document.createElement("input");
     cb.type="checkbox";
@@ -223,14 +233,16 @@ function buildTable(){
     // Date
     if(startDate){
       const d=new Date(startDate);
-      d.setDate(startDate.getDate()+day);
+      d.setDate(startDate.getDate()+day-1);
       tr.insertCell().textContent =
         dateMode==="hijri" ? hijriStr(gregorianToHijri(d))
                            : d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
     }
 
+    // Revise
     tr.insertCell().textContent=`Juz ${revise}`;
 
+    // Connect
     const conn=tr.insertCell();
     if(pendingRecite){
       conn.textContent=`Recite entire Juz ${pendingRecite.juz} (Pg ${pendingRecite.start}–${pendingRecite.end})`;
@@ -238,22 +250,30 @@ function buildTable(){
       pendingRecite=null;
     } else {
       const end=memStart-1;
-      conn.textContent=end>=curJuzStart?`Pg ${curJuzStart}–${end}`:`Pg ${curJuzStart}`;
+      // single page if end === start
+      if(end > curJuzStart) conn.textContent = `Pg ${curJuzStart}–${end}`;
+      else conn.textContent = `Pg ${curJuzStart}`;
     }
 
+    // Memorize
     tr.insertCell().textContent =
       ppd===1 ? `Pg ${memStart}` : `Pg ${memStart}–${memEnd}`;
 
+    // Listen (next day's revise)
     tr.insertCell().textContent=`Juz ${revise<highestJuz?revise+1:1}`;
 
     tbody.appendChild(tr);
 
+    // Advance
     p+=ppd; day++;
+
     highestJuz=Math.max(highestJuz,curJuz);
     revise=revise<highestJuz?revise+1:1;
 
+    // If we finished the current memorization juz today, schedule "recite entire juz" for tomorrow
     if(memEnd>=curJuzEnd){
       pendingRecite={juz:curJuz,start:curJuzStart,end:curJuzEnd};
+
       curJuz++;
       curJuzStart=juzStartPages[curJuz-1]||605;
       curJuzEnd=(juzStartPages[curJuz]||605)-1;
