@@ -198,6 +198,7 @@ function buildTable(){
   else dateHeader.classList.remove("hidden");
 
   let p=startP,day=1;
+
   let curJuz=getJuzForPage(startP);
   let curJuzStart=juzStartPages[curJuz-1];
   let curJuzEnd=(juzStartPages[curJuz]||605)-1;
@@ -207,7 +208,7 @@ function buildTable(){
 
   const startDate=sDateVal?new Date(sDateVal):null;
 
-  // ✅ NEW: if starting mid-juz, Day 1 connect should be reciting the ENTIRE previous Juz
+  // If starting mid-juz, Day 1 connect recites ENTIRE previous juz
   let pendingRecite=null;
   if(curJuz > 1 && startP > curJuzStart){
     const prevJuz = curJuz - 1;
@@ -216,8 +217,16 @@ function buildTable(){
     pendingRecite = { juz: prevJuz, start: prevStart, end: prevEnd };
   }
 
-  while(p<=endP){
-    const memStart=p, memEnd=Math.min(endP,p+ppd-1);
+  // Track when memorization is finished; then keep rows until revise hits highestJuz (cycle completes)
+  let memFinished = false;
+  let memFinishedAtRevise = null; // revise value shown on the last memorization row
+
+  while(true){
+    const memActive = !memFinished && (p <= endP);
+
+    const memStart = memActive ? p : null;
+    const memEnd = memActive ? Math.min(endP, p + ppd - 1) : null;
+
     const tr=document.createElement("tr");
 
     // Checkbox
@@ -230,10 +239,10 @@ function buildTable(){
 
     tr.insertCell().textContent=`Day ${day}`;
 
-    // Date
+    // Date (remove -1; Day 1 = start date)
     if(startDate){
       const d=new Date(startDate);
-      d.setDate(startDate.getDate()+day-1);
+      d.setDate(startDate.getDate()+day);
       tr.insertCell().textContent =
         dateMode==="hijri" ? hijriStr(gregorianToHijri(d))
                            : d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
@@ -242,51 +251,99 @@ function buildTable(){
     // Revise
     tr.insertCell().textContent=`Juz ${revise}`;
 
-    // Connect
+    // Connect / Memorize
     const conn=tr.insertCell();
-    if(pendingRecite){
-      conn.textContent=`Recite entire Juz ${pendingRecite.juz} (Pg ${pendingRecite.start}–${pendingRecite.end})`;
-      tr.classList.add("recite");
-      pendingRecite=null;
-    } else {
-      const end=memStart-1;
-      // single page if end === start
-      if(end > curJuzStart) conn.textContent = `Pg ${curJuzStart}–${end}`;
-      else conn.textContent = `Pg ${curJuzStart}`;
-    }
+    const memCell=tr.insertCell();
 
-    // Memorize
-    tr.insertCell().textContent =
-      ppd===1 ? `Pg ${memStart}` : `Pg ${memStart}–${memEnd}`;
+    if(!memActive){
+      // After finishing Qur'an: keep Revise/Listen/Day/Date only
+      conn.textContent = "-";
+      memCell.textContent = "-";
+    } else {
+      // Connect
+      if(pendingRecite){
+        conn.textContent=`Recite entire Juz ${pendingRecite.juz} (Pg ${pendingRecite.start}–${pendingRecite.end})`;
+        tr.classList.add("recite");
+        pendingRecite=null;
+      } else {
+        const end=memStart-1;
+        if(end > curJuzStart) conn.textContent = `Pg ${curJuzStart}–${end}`;
+        else conn.textContent = `Pg ${curJuzStart}`;
+      }
+
+      // Memorize
+      memCell.textContent =
+        ppd===1 ? `Pg ${memStart}` : `Pg ${memStart}–${memEnd}`;
+    }
 
     // Listen (next day's revise)
     tr.insertCell().textContent=`Juz ${revise<highestJuz?revise+1:1}`;
 
     tbody.appendChild(tr);
 
-    // Advance
-    p+=ppd; day++;
+    // ---- advance day/revise for next row ----
+    day++;
 
-    highestJuz=Math.max(highestJuz,curJuz);
-    revise=revise<highestJuz?revise+1:1;
+    // If memorization is done, highestJuz should stay (will be 30 for full Qur'an)
+    // Otherwise update highestJuz based on memorization juz progression
+    if(memActive){
+      // Advance memorization pages
+      p += ppd;
 
-    // If we finished the current memorization juz today, schedule "recite entire juz" for tomorrow
-    if(memEnd>=curJuzEnd){
-      pendingRecite={juz:curJuz,start:curJuzStart,end:curJuzEnd};
+      // Update highestJuz based on current mem juz
+      highestJuz = Math.max(highestJuz, curJuz);
 
-      curJuz++;
-      curJuzStart=juzStartPages[curJuz-1]||605;
-      curJuzEnd=(juzStartPages[curJuz]||605)-1;
+      // If we finished the current memorization juz today, schedule "recite entire juz" for tomorrow
+      if(memEnd >= curJuzEnd){
+        pendingRecite = { juz: curJuz, start: curJuzStart, end: curJuzEnd };
+
+        curJuz++;
+        curJuzStart = juzStartPages[curJuz-1] || 605;
+        curJuzEnd = (juzStartPages[curJuz] || 605) - 1;
+      }
+
+      // If we just crossed beyond endP, mark memorization finished
+      if(p > endP){
+        memFinished = true;
+        memFinishedAtRevise = revise; // the revise value shown on the LAST memorization row
+        // After finishing Qur'an, the loop target is completing up to highestJuz (typically 30)
+        pendingRecite = null; // per your request, replace other cells with "-"
+      }
+    }
+
+    // Advance revise (always)
+    revise = revise < highestJuz ? revise + 1 : 1;
+
+    // ---- stop condition ----
+    if(memFinished){
+      // If the last memorization row already had revise == highestJuz, the cycle is already complete
+      if(memFinishedAtRevise === highestJuz) break;
+
+      // Otherwise, keep adding rows until we reach revise == highestJuz (cycle completion)
+      // Note: 'revise' was advanced for the NEXT row; current row used the previous value.
+      // We stop right AFTER we render a row whose revise equals highestJuz.
+      // That means: when the row we just rendered had revise == highestJuz.
+      const justRenderedRevise = revise === 1 ? highestJuz : (revise - 1);
+      if(justRenderedRevise === highestJuz) break;
+    } else {
+      // normal memorization loop continues until memFinished flips true
+      if(p > endP && memFinished) {
+        // (redundant safety)
+      }
     }
   }
 
+  // Summary (end date should be based on total rows generated)
   if(startDate){
+    const totalRows = day - 1;
     const end=new Date(startDate);
-    end.setDate(startDate.getDate()+day-2);
+    end.setDate(startDate.getDate() + totalRows);
     const h=gregorianToHijri(end);
     summary.innerHTML=`📖 <strong>Expected Khatm Date:</strong><br>
       ${weekday(end)}, ${engDate(end)}<br>
       ${hijriStr(h)}<br><br>إن شاء الله`;
+  } else {
+    summary.textContent = "📅 Select a Start Date to see expected Khatm date below.";
   }
 }
 
